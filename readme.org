@@ -1,0 +1,716 @@
+#+PROPERTY:  header-args:R :cache no :results output :exports both :comments link :session *R:trait_variation* :eval yes :tangle yes
+
+* COMMENT Some Principal Components Analysis things
+mean 0, sd 1
+
+** k = 2
+#+begin_src R :results none
+  library(MASS)
+  k = 2
+  cr <- matrix(c(1,0.8,0.8,1),2)
+  sd.mat <- as.matrix(rep(1,k))
+  sig = cr *sd.mat%*%t(sd.mat)
+  d <- mvrnorm(n = 100, mu = rep(0,k), sig)
+
+#+end_src
+
+#+begin_src R :exports results :results graphics :file figs/cor1.png
+plot(d)
+#+end_src
+
+#+RESULTS:
+[[file:figs/cor1.png]]
+
+#+begin_src R
+pca <- prcomp(d)
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+plot(pca)
+#+end_src
+
+#+RESULTS:
+
+** k = 3
+#+begin_src R :results none
+  library(MASS)
+  k = 3
+  cr <- matrix(c(1,0.9,0,0.9,1,0,0,0,1),3)
+#  cr <- matrix(c(1,0,0,0,1,0,0,0,1),3)
+  sd.mat <- as.matrix(rep(1,k))
+  sig = cr *sd.mat%*%t(sd.mat)
+  d <- mvrnorm(n = 100, mu = rep(0,k), sig)
+
+#+end_src
+
+#+begin_src R :exports results :results graphics :file figs/cor1.png
+pairs(d)
+#+end_src
+
+#+RESULTS:
+[[file:figs/cor1.png]]
+
+#+begin_src R
+pca <- prcomp(d)
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :exports results :results graphics :file figs/pca.png
+plot(pca)
+#+end_src
+
+#+RESULTS:
+[[file:figs/pca.png]]
+
+** k = 4
+#+begin_src R :results none
+        library(MASS)
+        k = 4
+        cr <- matrix(c(1,0.9,0,0,
+                       0.9,1,0,0,
+                       0,0,1,.8,
+                       0,0,.8,1),k, byrow = T)
+        sd.mat <- as.matrix(rep(1,k))
+        sig = cr *sd.mat%*%t(sd.mat)
+        d <- mvrnorm(n = 100, mu = rep(0,k), sig)
+
+#+end_src
+
+#+begin_src R :exports results :results graphics :file figs/cor1.png
+pairs(d)
+#+end_src
+
+#+RESULTS:
+[[file:figs/cor1.png]]
+
+#+begin_src R
+pca <- prcomp(d)
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :exports results :results graphics :file figs/pca.png
+plot(pca)
+#+end_src
+
+#+RESULTS:
+[[file:figs/pca.png]]
+
+#+begin_src R
+pca_12 <- prcomp(d[,1:2])
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :exports results :results graphics :file figs/pca_12.png
+plot(pca_12)
+#+end_src
+
+#+RESULTS:
+[[file:figs/pca_12.png]]
+
+#+begin_src R
+pca_13 <- prcomp(d[,c(1,3)])
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :exports results :results graphics :file figs/pca_13.png
+plot(pca_13)
+#+end_src
+
+#+RESULTS:
+[[file:figs/pca_13.png]]
+
+
+
+How many species or which species can you select and still have the
+same number of pc's?
+
+This question needs to be better defined.
+
+
+
+** k = 4 no cor
+#+begin_src R :results none
+        library(MASS)
+        k = 4
+        cr <- matrix(c(1,0,0,0,
+                       0,1,0,0,
+                       0,0,1,0,
+                       0,0,0,1),k, byrow = T)
+        sd.mat <- as.matrix(rep(1,k))
+        sig = cr *sd.mat%*%t(sd.mat)
+        d <- mvrnorm(n = 100, mu = rep(0,k), sig)
+
+#+end_src
+
+#+begin_src R :exports results :results graphics :file figs/cor1.png
+pairs(d)
+#+end_src
+
+#+RESULTS:
+[[file:figs/cor1.png]]
+
+#+begin_src R
+pca <- prcomp(d)
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :exports results :results graphics :file figs/pca_4_nocor.png
+plot(pca)
+#+end_src
+
+#+RESULTS:
+[[file:figs/pca_4_nocor.png]]
+
+
+* Multivariate Regression
+** made up data
+#+begin_src R :results none
+        library(MASS)
+        k = 4
+        cr <- matrix(c(1,0.9,0,0,
+                       0.9,1,0,0,
+                       0,0,1,.8,
+                       0,0,.8,1),k, byrow = T)
+        sd.mat <- as.matrix(rep(1,k))
+        sig = cr *sd.mat%*%t(sd.mat)
+        d <- mvrnorm(n = 100, mu = rep(0,k), sig)
+
+#+end_src
+
+#+begin_src R :exports results :results graphics :file figs/pairs_d.png
+pairs(d)
+#+end_src
+
+#+RESULTS:
+[[file:figs/pairs_d.png]]
+
+#+begin_src R
+    df <- data.frame(d)
+
+    gm <- lm(X1 + X2 + X3 + X4 ~ X1 + X2 + X3 + X4, df, na.action = "na.fail")
+    dm <- dredge(gm, extra = c("R^2"))
+
+  dtt <- model.sel(dm) %>%
+      dplyr::select(X1, X2, X3, X4, `R^2`) %>%
+      arrange(-`R^2`)
+#+end_src
+
+#+begin_src R :results org
+  dtt %>% org
+#+end_src
+
+#+RESULTS:
+#+BEGIN_SRC org
+|    |   X1 |   X2 |   X3 |   X4 |  R^2 |
+|----+------+------+------+------+------|
+|  1 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 |
+|  2 | 1.85 |      | 1.02 | 0.97 | 0.97 |
+|  3 |      | 1.92 | 0.99 | 1.01 | 0.97 |
+|  4 | 0.98 | 1.03 |      | 1.79 | 0.94 |
+|  5 | 1.02 | 0.94 | 1.79 |      | 0.94 |
+|  6 | 1.83 |      | 1.78 |      | 0.92 |
+|  7 |      | 1.93 |      | 1.79 | 0.91 |
+|  8 | 1.86 |      |      | 1.77 | 0.91 |
+|  9 |      | 1.88 | 1.79 |      | 0.91 |
+| 10 | 1.00 | 0.87 |      |      | 0.47 |
+| 11 |      |      | 1.03 | 0.84 | 0.46 |
+| 12 | 1.74 |      |      |      | 0.45 |
+| 13 |      | 1.79 |      |      | 0.44 |
+| 14 |      |      | 1.70 |      | 0.42 |
+| 15 |      |      |      | 1.65 | 0.40 |
+| 16 |      |      |      |      | 0.00 |
+#+END_SRC
+
+
+
+#+begin_src R :results org
+  n_total_preds <- 4
+
+  dtt <-  dtt %>%
+      mutate(n_preds = n_total_preds - rowSums(is.na(.))) %>%
+      arrange(-n_preds, -`R^2`)
+
+
+  dttt <- dtt %>%
+      group_by(n_preds) %>%
+      summarize(max_R2 = max(`R^2`)) %>%
+    data.frame()
+
+dttt %>% org(digits = 4)
+#+end_src
+
+#+RESULTS:
+#+BEGIN_SRC org
+|   | n_preds | max_R2 |
+|---+---------+--------|
+| 1 |  0.0000 | 0.0000 |
+| 2 |  1.0000 | 0.4498 |
+| 3 |  2.0000 | 0.9183 |
+| 4 |  3.0000 | 0.9706 |
+| 5 |  4.0000 | 1.0000 |
+#+END_SRC
+
+#+begin_src R :exports results :results graphics :file figs/d_r2.png
+  ggplot(dttt, aes(x = n_preds, y = max_R2)) + geom_col()
+#+end_src
+
+#+RESULTS:
+[[file:figs/d_r2.png]]
+
+#+begin_src R
+dtttt <- left_join(dttt, dtt, by = c("max_R2" = "R^2", "n_preds"))
+dtttt
+#+end_src
+
+#+RESULTS:
+:
+:  n_preds    max_R2       X1 X2       X3        X4
+: 1       0 0.0000000       NA NA       NA        NA
+: 2       1 0.4498275 1.742207 NA       NA        NA
+: 3       2 0.9182697 1.826657 NA 1.784334        NA
+: 4       3 0.9705941 1.853109 NA 1.015954 0.9695314
+: 5       4 1.0000000 1.000000  1 1.000000 1.0000000
+
+
+
+** trait data
+#+begin_src R
+  library(dplyr)
+  library(ggplot2)
+  library(GGally)
+  library(ascii)
+  options(asciiType = "org")
+org <- function(x,...) {
+         suppressWarnings(print(ascii(x,...)))
+
+  }
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R
+
+  d <- read.csv("data/NEON_pixel_traits_7domains_new_trait.csv") %>%
+    sample_n(500)
+
+#+end_src
+
+#+begin_src R
+  d <- d %>% dplyr::select(-Domain, -Domain_Site)
+  ds <- as.data.frame(scale(d))
+
+  colnames(ds) <- colnames(d)
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :exports results :results graphics :file figs/trait_corr.png
+ggcorr(ds,  nbreaks = 7)
+#+end_src
+
+#+RESULTS:
+[[file:figs/trait_corr.png]]
+
+There are many highly correlated traits.
+
+
+*** Test on a subset of traits
+
+#+begin_src R
+d.sub1 <- dplyr::select(ds, Carbon, LMA, Nitrogen, Zinc, d13C, EWT)
+#d.sub2 <- select(d, Carbon, LMA, Nitrogen, Sugar, starch, Potassium, Lignin, Zinc, d13C, EWT)
+d.sub <- d.sub1
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :exports results :results graphics :file figs/trait_corr_subset.png
+ggcorr(d.sub,  nbreaks = 7)
+#+end_src
+
+#+RESULTS:
+[[file:figs/trait_corr_subset.png]]
+
+#+begin_src R :exports results :results graphics :file figs/trait_pairs_subset.png
+ggpairs(d.sub)
+#+end_src
+
+#+RESULTS:
+[[file:figs/trait_pairs_subset.png]]
+
+
+#+begin_src R
+  library(MuMIn)
+  library(broom)
+  library(parallel)
+
+  #gm <- lm(Carbon + LMA + Nitrogen + Sugar + starch + Potassium + Lignin + Zinc + d13C + EWT ~ Carbon + LMA + Nitrogen + Sugar + starch + Potassium + Lignin + Zinc + d13C + EWT, data = d.sub, na.action = "na.fail")
+  gm <- lm(Carbon + LMA + Nitrogen +  Zinc + d13C + EWT ~ Carbon + LMA + Nitrogen + Zinc + d13C + EWT, data = d.sub, na.action = "na.fail")
+  #dm <- dredge(gm, extra = c("R^2"))
+
+
+  cores<-4
+  clusterType <- if(length(find.package("snow", quiet = TRUE))) "SOCK" else "PSOCK"
+  clust <- try(makeCluster(getOption("cl.cores", cores), type = clusterType))
+  myclust<-clust
+
+  clusterExport(myclust, c("d.sub"), envir=environment())
+  gm <- lm(Carbon + LMA + Nitrogen +  Zinc + d13C + EWT ~ Carbon + LMA + Nitrogen + Zinc + d13C + EWT, data = d.sub, na.action = "na.fail")
+  dm <- pdredge(gm, cluster=myclust, extra = c("R^2"))
+
+#+end_src
+
+#+RESULTS:
+: Fixed term is "(Intercept)"
+
+#+begin_src R :colnames yes :results org
+    dtt <- model.sel(dm) %>%
+#      select(Carbon, LMA, Nitrogen, Sugar, starch, Potassium, Lignin, Zinc, d13C, EWT, `R^2` ) %>%
+      dplyr::select(Carbon, LMA, Nitrogen, Zinc, d13C, EWT, `R^2` ) %>%
+      arrange(-`R^2`)
+
+  dtt %>% head%>%  org(digits = 4)
+#  dtt %>%  org(digits = 4)
+#+end_src
+
+#+RESULTS:
+#+BEGIN_SRC org
+|   | Carbon |    LMA | Nitrogen |   Zinc |   d13C |    EWT |    R^2 |
+|---+--------+--------+----------+--------+--------+--------+--------|
+| 1 | 1.0000 | 1.0000 |   1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
+| 2 | 1.4265 |        |   0.6799 | 1.1212 | 0.9814 | 1.4842 | 0.9826 |
+| 3 | 0.4113 | 2.1412 |   1.0250 | 1.0147 | 0.9862 |        | 0.9590 |
+| 4 |        | 2.2436 |   1.1475 | 1.1567 | 1.0361 | 0.2717 | 0.9493 |
+| 5 | 1.1526 | 0.0348 |          | 1.4216 | 0.9497 | 1.0320 | 0.9476 |
+| 6 | 1.1716 |        |          | 1.4209 | 0.9496 | 1.0559 | 0.9476 |
+#+END_SRC
+
+#+begin_src R :results org
+  n_total_preds <- 10
+  n_total_preds <- 6
+
+  dtt <-  dtt %>%
+      mutate(n_preds = n_total_preds - rowSums(is.na(.))) %>%
+      arrange(-n_preds, -`R^2`)
+
+#  dtt %>% head %>% org(digits = 4)
+  dtt %>% org(digits = 4)
+#+end_src
+
+#+RESULTS:
+#+BEGIN_SRC org
+|    | Carbon |     LMA | Nitrogen |   Zinc |    d13C |     EWT |    R^2 | n_preds |
+|----+--------+---------+----------+--------+---------+---------+--------+---------|
+|  1 | 1.0000 |  1.0000 |   1.0000 | 1.0000 |  1.0000 |  1.0000 | 1.0000 |  6.0000 |
+|  2 | 1.4265 |         |   0.6799 | 1.1212 |  0.9814 |  1.4842 | 0.9826 |  5.0000 |
+|  3 | 0.4113 |  2.1412 |   1.0250 | 1.0147 |  0.9862 |         | 0.9590 |  5.0000 |
+|  4 |        |  2.2436 |   1.1475 | 1.1567 |  1.0361 |  0.2717 | 0.9493 |  5.0000 |
+|  5 | 1.1526 |  0.0348 |          | 1.4216 |  0.9497 |  1.0320 | 0.9476 |  5.0000 |
+|  6 | 1.2145 |  1.4837 |   1.5582 |        |  0.6296 |  1.0248 | 0.9306 |  5.0000 |
+|  7 | 1.0787 |  0.8819 |   0.8940 | 0.4103 |         |  0.9628 | 0.8895 |  5.0000 |
+|  8 | 1.1716 |         |          | 1.4209 |  0.9496 |  1.0559 | 0.9476 |  4.0000 |
+|  9 |        |  2.4382 |   1.1181 | 1.1198 |  1.0194 |         | 0.9440 |  4.0000 |
+| 10 | 0.5485 |  1.1885 |          | 1.4476 |  0.9341 |         | 0.9039 |  4.0000 |
+| 11 | 1.9277 |         |   1.1602 |        |  0.5296 |  1.7927 | 0.8899 |  4.0000 |
+| 12 | 0.6142 |  2.6609 |   1.5922 |        |  0.6099 |         | 0.8876 |  4.0000 |
+| 13 |        |  1.3332 |          | 1.6797 |  0.9835 |  0.1788 | 0.8787 |  4.0000 |
+| 14 | 1.4543 |         |   0.6128 | 0.5271 |         |  1.3913 | 0.8760 |  4.0000 |
+| 15 | 1.1760 |  1.1588 |   1.2076 |        |         |  0.9830 | 0.8746 |  4.0000 |
+| 16 |        |  3.1419 |   1.8535 |        |  0.6020 |  0.1144 | 0.8532 |  4.0000 |
+| 17 | 0.5105 |  1.9827 |   0.9195 | 0.4322 |         |         | 0.8515 |  4.0000 |
+| 18 | 1.2122 |  0.0197 |          | 0.8159 |         |  0.9932 | 0.8474 |  4.0000 |
+| 19 |        |  2.2225 |   1.0494 | 0.5568 |         |  0.1735 | 0.8304 |  4.0000 |
+| 20 | 1.0882 |         |  -0.4490 | 1.6285 |  0.8652 |         | 0.7809 |  4.0000 |
+| 21 | 1.7097 | -0.0675 |          |        |  0.2089 |  1.1114 | 0.7642 |  4.0000 |
+| 22 |        |         |  -0.0813 | 2.0550 |  1.0208 |  1.1010 | 0.7629 |  4.0000 |
+| 23 |        |  1.4779 |          | 1.6463 |  0.9733 |         | 0.8764 |  3.0000 |
+| 24 |        |  3.2130 |   1.8313 |        |  0.6008 |         | 0.8523 |  3.0000 |
+| 25 | 1.7580 |         |   0.9307 |        |         |  1.6097 | 0.8489 |  3.0000 |
+| 26 | 1.2230 |         |          | 0.8155 |         |  1.0068 | 0.8474 |  3.0000 |
+| 27 | 0.6005 |  2.2992 |   1.2508 |        |         |         | 0.8349 |  3.0000 |
+| 28 |        |  2.3477 |   1.0316 | 0.5393 |         |         | 0.8282 |  3.0000 |
+| 29 | 0.6295 |  1.1310 |          | 0.8505 |         |         | 0.8069 |  3.0000 |
+| 30 |        |  2.7803 |   1.5089 |        |         |  0.1021 | 0.8019 |  3.0000 |
+| 31 |        |  1.3873 |          | 1.0651 |         |  0.0928 | 0.7710 |  3.0000 |
+| 32 | 1.6733 |         |          |        |  0.2084 |  1.0651 | 0.7641 |  3.0000 |
+| 33 |        |         |          | 2.0351 |  1.0266 |  1.1548 | 0.7623 |  3.0000 |
+| 34 | 1.6512 | -0.0582 |          |        |         |  1.0875 | 0.7569 |  3.0000 |
+| 35 | 1.2877 |         |          | 1.4341 |  0.8631 |         | 0.7515 |  3.0000 |
+| 36 | 1.0692 |  1.1746 |          |        |  0.1775 |         | 0.7134 |  3.0000 |
+| 37 | 1.1317 |         |  -0.4459 | 1.0726 |         |         | 0.6974 |  3.0000 |
+| 38 |        |         |  -0.1666 | 1.4555 |         |  0.9965 | 0.6475 |  3.0000 |
+| 39 |        |         |  -0.8307 | 2.2809 |  0.9216 |         | 0.6447 |  3.0000 |
+| 40 |        |  2.0136 |          |        |  0.0451 | -0.2526 | 0.5980 |  3.0000 |
+| 41 | 1.7791 |         |  -0.0551 |        |  0.1021 |         | 0.5651 |  3.0000 |
+| 42 |        |         |   0.4704 |        | -0.1141 |  1.5514 | 0.3228 |  3.0000 |
+| 43 |        |  2.8445 |   1.4896 |        |         |         | 0.8012 |  2.0000 |
+| 44 |        |  1.4624 |          | 1.0510 |         |         | 0.7704 |  2.0000 |
+| 45 | 1.6199 |         |          |        |         |  1.0476 | 0.7568 |  2.0000 |
+| 46 | 1.0311 |  1.1599 |          |        |         |         | 0.7082 |  2.0000 |
+| 47 | 1.3297 |         |          | 0.8809 |         |         | 0.6684 |  2.0000 |
+| 48 |        |         |          | 1.4075 |         |  1.1062 | 0.6448 |  2.0000 |
+| 49 |        |  1.9999 |          |        |         | -0.2475 | 0.5976 |  2.0000 |
+| 50 |        |  1.8190 |          |        |  0.0325 |         | 0.5931 |  2.0000 |
+| 51 | 1.7951 |         |          |        |  0.1143 |         | 0.5646 |  2.0000 |
+| 52 | 1.7467 |         |  -0.0772 |        |         |         | 0.5634 |  2.0000 |
+| 53 |        |         |  -0.8436 | 1.7151 |         |         | 0.5497 |  2.0000 |
+| 54 |        |         |          | 2.1169 |  0.9396 |         | 0.5256 |  2.0000 |
+| 55 |        |         |   0.5111 |        |         |  1.5905 | 0.3207 |  2.0000 |
+| 56 |        |         |          |        | -0.2180 |  1.2453 | 0.3004 |  2.0000 |
+| 57 |        |         |  -0.5459 |        | -0.4446 |         | 0.0770 |  2.0000 |
+| 58 |        |  1.8119 |          |        |         |         | 0.5930 |  1.0000 |
+| 59 | 1.7646 |         |          |        |         |         | 0.5624 |  1.0000 |
+| 60 |        |         |          | 1.5373 |         |         | 0.4268 |  1.0000 |
+| 61 |        |         |          |        |         |  1.2713 | 0.2919 |  1.0000 |
+| 62 |        |         |  -0.4821 |        |         |         | 0.0420 |  1.0000 |
+| 63 |        |         |          |        | -0.3663 |         | 0.0242 |  1.0000 |
+| 64 |        |         |          |        |         |         | 0.0000 |  0.0000 |
+#+END_SRC
+
+
+#+begin_src R :results org
+  dttt <- dtt %>%
+      group_by(n_preds) %>%
+      summarize(max_R2 = max(`R^2`)) %>%
+    data.frame()
+
+dttt %>% org(digits = 4)
+#+end_src
+
+#+RESULTS:
+#+BEGIN_SRC org
+|   | n_preds | max_R2 |
+|---+---------+--------|
+| 1 |  0.0000 | 0.0000 |
+| 2 |  1.0000 | 0.5930 |
+| 3 |  2.0000 | 0.8012 |
+| 4 |  3.0000 | 0.8764 |
+| 5 |  4.0000 | 0.9476 |
+| 6 |  5.0000 | 0.9826 |
+| 7 |  6.0000 | 1.0000 |
+#+END_SRC
+
+#+begin_src R
+dtttt <- left_join(dttt, dtt, by = c("max_R2" = "R^2", "n_preds"))
+dtttt
+#+end_src
+
+#+RESULTS:
+:   n_preds    max_R2  Carbon      LMA  Nitrogen     Zinc      d13C      EWT
+: 1       0 0.0000000      NA       NA        NA       NA        NA       NA
+: 2       1 0.5929584      NA 1.811899        NA       NA        NA       NA
+: 3       2 0.8011596      NA 2.844489 1.4896208       NA        NA       NA
+: 4       3 0.8763771      NA 1.477901        NA 1.646313 0.9733245       NA
+: 5       4 0.9475517 1.17159       NA        NA 1.420914 0.9495722 1.055883
+: 6       5 0.9826141 1.42652       NA 0.6798613 1.121182 0.9814090 1.484202
+: 7       6 1.0000000 1.00000 1.000000 1.0000000 1.000000 1.0000000 1.000000
+
+
+#+begin_src R :exports results :results graphics :file figs/n_preds_maxR2.png
+  ggplot(dttt, aes(x = n_preds, y = max_R2)) + geom_col()
+
+#+end_src
+
+#+RESULTS:
+[[file:figs/n_preds_maxR2.png]]
+
+
+
+*** All traits
+
+#+begin_src R :tangle pdredge_krusty.R
+    library(MuMIn)
+    library(broom)
+    library(parallel)
+    library(dplyr)
+
+    d <- read.csv("data/NEON_pixel_traits_7domains_new_trait.csv") %>%
+      sample_n(500)
+
+
+    d <- d %>% dplyr::select(-Domain, -Domain_Site)
+    ds <- as.data.frame(scale(d))
+    colnames(ds) <- colnames(d)
+
+    cores <- 32
+
+    clusterType <- if(length(find.package("snow", quiet = TRUE))) "SOCK" else "PSOCK"
+    clust <- try(makeCluster(getOption("cl.cores", cores), type = clusterType))
+    myclust<-clust
+
+    clusterExport(myclust, c("ds"), envir=environment())
+
+    gm <- lm(Carbon +
+             Aluminum +
+             Carotenoids_area +
+             Carotenoids_mass +
+             Cellulose +
+             Chlorophyll_area +
+             Chlorophyll_mass +
+             d13C +
+             EWT +
+             Flavonoids +
+             Iron +
+             Lignin +
+             LMA +
+             Manganese +
+             Nitrogen +
+             Phosphorous +
+             Potassium +
+             Sugar +
+             starch +
+             Phenolics +
+             Water +
+             Zinc ~
+             Carbon +
+             Aluminum +
+             Carotenoids_area +
+             Carotenoids_mass +
+             Cellulose +
+             Chlorophyll_area +
+             Chlorophyll_mass +
+             d13C +
+             EWT +
+            Flavonoids +
+            Iron +
+            Lignin +
+            LMA +
+            Manganese +
+            Nitrogen +
+             Phosphorous +
+             Potassium +
+             Sugar +
+             starch +
+             Phenolics +
+             Water +
+             Zinc, data = ds, na.action = "na.fail")
+
+
+    dm <- pdredge(gm, cluster=myclust, extra = c("R^2"))
+
+  saveRDS(dm, "data/dredge22traits.rds")
+
+#+end_src
+
+send to krusty and run there:
+#+BEGIN_SRC sh
+nohup R CMD BATCH pdredge_krusty.R &
+#+END_SRC
+
+bring back
+#+begin_src sh
+rsync -avz erker@krusty:~/trait_variation/data/dredge22traits.rds ~/git/trait_variation/data/
+#+end_src
+
+#+begin_src R :colnames yes :results org
+        library(MuMIn)
+        library(broom)
+        library(parallel)
+        library(dplyr)
+
+      dm <- readRDS("data/dredge22traits.rds")
+
+      dtt <- model.sel(dm) %>%
+              dplyr::select(-`(Intercept)`, -logLik, -AICc, -delta, -weight)
+
+        dttt <-  dtt %>%
+            mutate(n_preds = df - 2) %>%
+            group_by(n_preds) %>%
+            summarize(max_R2 = max(`R^2`)) %>%
+          data.frame()
+
+    saveRDS(dttt, "data/22traits_maxR2.rds")
+
+  dtttt <- left_join(dttt, dtt, by = c("max_R2" = "R^2", "n_preds"))
+  dtttt
+
+    saveRDS(dtttt, "data/22traits_maxR2_wPreds.rds")
+
+  ## dtt %>%
+  ##    mutate(n_preds = df - 2) %>%
+  ##           group_by(n_preds) %>%
+  ##           top_n(`R^2`,10)) %>%
+  ##         data.frame()
+
+
+#+end_src
+
+#+begin_src R
+  dttt <- readRDS("data/22traits_maxR2.rds")
+  dttt %>% org(digits = 4)
+
+#+end_src
+
+#+RESULTS:
+#+begin_example
+|    | n_preds | max_R2 |
+|----+---------+--------|
+| 1  | 0.0000  | 0.0000 |
+| 2  | 1.0000  | 0.6820 |
+| 3  | 2.0000  | 0.8671 |
+| 4  | 3.0000  | 0.9036 |
+| 5  | 4.0000  | 0.9305 |
+| 6  | 5.0000  | 0.9561 |
+| 7  | 6.0000  | 0.9648 |
+| 8  | 7.0000  | 0.9726 |
+| 9  | 8.0000  | 0.9766 |
+| 10 | 9.0000  | 0.9792 |
+| 11 | 10.0000 | 0.9825 |
+| 12 | 11.0000 | 0.9853 |
+| 13 | 12.0000 | 0.9872 |
+| 14 | 13.0000 | 0.9887 |
+| 15 | 14.0000 | 0.9909 |
+| 16 | 15.0000 | 0.9921 |
+| 17 | 16.0000 | 0.9943 |
+| 18 | 17.0000 | 0.9955 |
+| 19 | 18.0000 | 0.9970 |
+| 20 | 19.0000 | 0.9981 |
+| 21 | 20.0000 | 0.9990 |
+| 22 | 21.0000 | 0.9997 |
+| 23 | 22.0000 | 1.0000 |
+#+end_example
+
+#+begin_src R :exports results :results graphics :file figs/n_preds_maxR2_alltraits.png
+  ggplot(dttt, aes(x = n_preds, y = max_R2)) + geom_col() +
+    scale_y_continuous(breaks = seq(0,1,.1))
+#+end_src
+
+#+RESULTS:
+[[file:figs/n_preds_maxR2_alltraits.png]]
+
+#+begin_src R
+dtttt <- left_join(dttt, dtt, by = c("max_R2" = "R^2", "n_preds"))
+dtttt
+#+end_src
+
+#+RESULTS:
+#+begin_example
+
+ n_preds    max_R2    Carbon       LMA Nitrogen     Sugar    starch Potassium
+1       0 0.0000000        NA        NA       NA        NA        NA        NA
+2       1 0.9678080        NA 1.1396795       NA        NA        NA        NA
+3       2 0.9935166 4.1101502 0.9945552       NA        NA        NA        NA
+4       3 0.9988556        NA 0.9901785       NA        NA 1.4043093        NA
+5       4 0.9998680 1.3711811 0.9770027       NA        NA 1.0315729        NA
+6       5 0.9999275 1.1654290 0.9841653       NA 0.6932576 0.9716017        NA
+7       6 0.9999941 0.9350892 1.0007894 1.236966 0.9428021 0.9593241        NA
+8       7 1.0000000 1.0000000 1.0000000 1.000000 1.0000000 1.0000000         1
+     Lignin
+1        NA
+2        NA
+3        NA
+4 1.2749368
+5 0.9863339
+6 0.9820151
+7 1.0068448
+8 1.0000000
+#+end_example
+
+
